@@ -192,10 +192,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                         ],
                         selected: {_selectedThemeMode},
-                        onSelectionChanged: (newSelection) {
+                        onSelectionChanged: (newSelection) async {
+                          final selectedMode = newSelection.first;
                           setState(() {
-                            _selectedThemeMode = newSelection.first;
+                            _selectedThemeMode = selectedMode;
                           });
+                          await ref
+                              .read(profileControllerProvider.notifier)
+                              .updateThemeMode(
+                                userId: widget.user.id,
+                                themeMode: selectedMode,
+                              );
                         },
                       ),
                     ],
