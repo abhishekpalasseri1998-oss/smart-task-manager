@@ -45,17 +45,20 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
     );
 
     final data = response.data;
-    if (data is List) {
-      return data.map((json) => TaskModel.fromJson(json as Map<String, dynamic>)).toList();
-    } else if (data is Map<String, dynamic> && data.containsKey('tasks')) {
-      final tasksList = data['tasks'] as List;
-      return tasksList.map((json) => TaskModel.fromJson(json as Map<String, dynamic>)).toList();
-    } else if (data is Map<String, dynamic> && data.containsKey('data')) {
-      final tasksList = data['data'] as List;
-      return tasksList.map((json) => TaskModel.fromJson(json as Map<String, dynamic>)).toList();
+    List taskJsonList = [];
+
+    if (data is Map<String, dynamic> && data.containsKey('data')) {
+      final inner = data['data'];
+      if (inner is List) {
+        taskJsonList = inner;
+      }
+    } else if (data is List) {
+      taskJsonList = data;
     }
 
-    return [];
+    return taskJsonList
+        .map((json) => TaskModel.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
   @override
@@ -68,11 +71,17 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       queryParameters: {
         'user_id': userId,
       },
-      data: task.toJson(),
+      data: task.toCreateJson(),
     );
 
-    if (response.data is Map<String, dynamic>) {
-      return TaskModel.fromJson(response.data as Map<String, dynamic>);
+    final data = response.data;
+    if (data is Map<String, dynamic> && data.containsKey('data')) {
+      final taskData = data['data'];
+      if (taskData is Map<String, dynamic>) {
+        return TaskModel.fromJson(taskData);
+      }
+    } else if (data is Map<String, dynamic>) {
+      return TaskModel.fromJson(data);
     }
 
     return task;
@@ -88,11 +97,17 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       queryParameters: {
         'user_id': userId,
       },
-      data: task.toJson(),
+      data: task.toCreateJson(),
     );
 
-    if (response.data is Map<String, dynamic>) {
-      return TaskModel.fromJson(response.data as Map<String, dynamic>);
+    final data = response.data;
+    if (data is Map<String, dynamic> && data.containsKey('data')) {
+      final taskData = data['data'];
+      if (taskData is Map<String, dynamic>) {
+        return TaskModel.fromJson(taskData);
+      }
+    } else if (data is Map<String, dynamic>) {
+      return TaskModel.fromJson(data);
     }
 
     return task;

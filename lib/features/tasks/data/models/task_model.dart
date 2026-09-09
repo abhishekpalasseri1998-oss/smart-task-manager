@@ -6,12 +6,31 @@ class TaskModel extends TaskEntity {
     required super.userId,
     required super.title,
     super.description,
-    super.priority = 'medium',
+    super.priority = 'Medium',
     super.category = 'Work',
     required super.dueDate,
     super.isCompleted = false,
     super.createdAt,
   });
+
+  static String capitalizePriority(String p) {
+    if (p.isEmpty) return 'Medium';
+    final lower = p.toLowerCase();
+    switch (lower) {
+      case 'high':
+        return 'High';
+      case 'low':
+        return 'Low';
+      case 'medium':
+      default:
+        return 'Medium';
+    }
+  }
+
+  static String normalizeCategory(String c) {
+    if (c == 'Other') return 'Others';
+    return c;
+  }
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
     DateTime parseDate(dynamic val) {
@@ -28,8 +47,8 @@ class TaskModel extends TaskEntity {
       userId: (json['user_id'] ?? json['userId'] ?? '').toString(),
       title: json['title'] as String? ?? 'Untitled Task',
       description: json['description'] as String?,
-      priority: (json['priority'] as String? ?? 'medium').toLowerCase(),
-      category: json['category'] as String? ?? 'Work',
+      priority: capitalizePriority(json['priority'] as String? ?? 'Medium'),
+      category: normalizeCategory(json['category'] as String? ?? 'Work'),
       dueDate: json['due_date'] != null
           ? parseDate(json['due_date'])
           : (json['dueDate'] != null
@@ -44,14 +63,27 @@ class TaskModel extends TaskEntity {
     );
   }
 
+  /// Request body payload for TaskCreate (POST / PUT)
+  Map<String, dynamic> toCreateJson() {
+    return {
+      'title': title,
+      if (description != null && description!.trim().isNotEmpty)
+        'description': description!.trim(),
+      'is_completed': isCompleted,
+      'due_date': dueDate.toIso8601String(),
+      'priority': capitalizePriority(priority),
+      'category': normalizeCategory(category),
+    };
+  }
+
   Map<String, dynamic> toJson() {
     return {
       if (id.isNotEmpty) 'id': id,
       'user_id': userId,
       'title': title,
       if (description != null) 'description': description,
-      'priority': priority,
-      'category': category,
+      'priority': capitalizePriority(priority),
+      'category': normalizeCategory(category),
       'due_date': dueDate.toIso8601String(),
       'is_completed': isCompleted,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
@@ -64,8 +96,8 @@ class TaskModel extends TaskEntity {
       userId: entity.userId,
       title: entity.title,
       description: entity.description,
-      priority: entity.priority,
-      category: entity.category,
+      priority: capitalizePriority(entity.priority),
+      category: normalizeCategory(entity.category),
       dueDate: entity.dueDate,
       isCompleted: entity.isCompleted,
       createdAt: entity.createdAt,

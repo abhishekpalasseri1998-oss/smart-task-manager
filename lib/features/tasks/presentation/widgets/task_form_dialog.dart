@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../data/models/task_model.dart';
 import '../../domain/entities/task_entity.dart';
 
 class TaskFormDialog extends StatefulWidget {
@@ -32,13 +33,16 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
   late String _category;
   late DateTime _dueDate;
 
-  final List<String> _priorities = ['low', 'medium', 'high'];
+  final List<String> _priorities = ['Low', 'Medium', 'High'];
   final List<String> _categories = [
     'Work',
     'Personal',
-    'Shopping',
     'Health',
-    'Other'
+    'Finance',
+    'Education',
+    'Shopping',
+    'Travel',
+    'Others'
   ];
 
   @override
@@ -48,8 +52,13 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
         TextEditingController(text: widget.initialTask?.title ?? '');
     _descriptionController =
         TextEditingController(text: widget.initialTask?.description ?? '');
-    _priority = widget.initialTask?.priority.toLowerCase() ?? 'medium';
-    _category = widget.initialTask?.category ?? 'Work';
+    _priority = TaskModel.capitalizePriority(
+        widget.initialTask?.priority ?? 'Medium');
+    _category = TaskModel.normalizeCategory(
+        widget.initialTask?.category ?? 'Work');
+  if (!_categories.contains(_category)) {
+      _category = 'Work';
+    }
     _dueDate = widget.initialTask?.dueDate ?? DateTime.now();
   }
 
@@ -149,7 +158,7 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
                         items: _priorities
                             .map((p) => DropdownMenuItem(
                                   value: p,
-                                  child: Text(p.toUpperCase()),
+                                  child: Text(p),
                                 ))
                             .toList(),
                         onChanged: (val) {
