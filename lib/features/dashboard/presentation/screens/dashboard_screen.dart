@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
-import 'package:smart_task_manager/features/profile/presentation/screens/profile_screen.dart';
+import '../../../profile/presentation/screens/profile_screen.dart';
+import '../../../tasks/presentation/providers/task_providers.dart';
+import '../../../tasks/presentation/screens/tasks_screen.dart';
+import '../../../tasks/presentation/widgets/task_form_dialog.dart';
 
 class DashboardScreen extends ConsumerWidget {
   final UserEntity user;
@@ -12,6 +15,36 @@ class DashboardScreen extends ConsumerWidget {
     required this.user,
   });
 
+  void _showAddTaskDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (_) => TaskFormDialog(
+        userId: user.id,
+        onSubmit: ({
+          required String title,
+          String? description,
+          required String priority,
+          required String category,
+          required DateTime dueDate,
+        }) {
+          ref.read(tasksNotifierProvider.notifier).addTask(
+                userId: user.id,
+                title: title,
+                description: description,
+                priority: priority,
+                category: category,
+                dueDate: dueDate,
+              );
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => TasksScreen(user: user),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -19,19 +52,11 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: const Text(
+          'Smart Task Manager',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
-          IconButton(
-            tooltip: 'Edit Profile',
-            icon: const Icon(Icons.person_outline),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => ProfileScreen(user: user),
-                ),
-              );
-            },
-          ),
           IconButton(
             tooltip: 'Logout',
             icon: authState.isLoading
@@ -54,112 +79,146 @@ class DashboardScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+            // Welcome Header
+            Text(
+              'Hello, ${user.name} 👋',
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: theme.colorScheme.primaryContainer,
-                      child: Text(
-                        user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user.name,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            user.email,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Theme: ${user.themeMode.toUpperCase()}',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined),
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => ProfileScreen(user: user),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Manage your tasks and stay productive today',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 24),
+
+            // Action Buttons Row: [ All Tasks ] & [ + Add Task ]
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => TasksScreen(user: user),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.list_alt_rounded),
+                    label: const Text('All Tasks'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showAddTaskDialog(context, ref),
+                    icon: const Icon(Icons.add_rounded),
+                    label: const Text('+ Add Task'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 32),
             Text(
-              'Task Overview',
+              'Quick Links',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 12),
+
+            // Navigation List Cards: Profile, Settings/Theme, Logout
             Card(
-              elevation: 1,
+              elevation: 1.5,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Center(
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.checklist_rounded,
-                        size: 48,
-                        color: theme.colorScheme.secondary,
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: theme.colorScheme.primaryContainer,
+                      child: Icon(
+                        Icons.person_outline,
+                        color: theme.colorScheme.onPrimaryContainer,
                       ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Firebase Auth & Firestore Connected',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                    ),
+                    title: const Text(
+                      'Profile',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(user.email),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ProfileScreen(user: user),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Profile document synced live at users/${user.id}',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
-                ),
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+                  ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: theme.colorScheme.secondaryContainer,
+                      child: Icon(
+                        Icons.settings_outlined,
+                        color: theme.colorScheme.onSecondaryContainer,
+                      ),
+                    ),
+                    title: const Text(
+                      'Settings & Theme',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text('Current Mode: ${user.themeMode.toUpperCase()}'),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ProfileScreen(user: user),
+                        ),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+                  ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.red.withValues(alpha: 0.1),
+                      child: const Icon(
+                        Icons.logout_rounded,
+                        color: Colors.red,
+                      ),
+                    ),
+                    title: const Text(
+                      'Logout',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red,
+                      ),
+                    ),
+                    subtitle: const Text('Sign out of your account'),
+                    onTap: () async {
+                      await ref.read(authControllerProvider.notifier).signOut();
+                    },
+                  ),
+                ],
               ),
             ),
           ],
