@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/network/dio_client.dart';
 import '../models/task_model.dart';
 
@@ -26,8 +27,17 @@ abstract class TaskRemoteDataSource {
 
 class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
   final DioClient _dioClient;
+  final FirebaseAuth _firebaseAuth;
 
-  TaskRemoteDataSourceImpl(this._dioClient);
+  TaskRemoteDataSourceImpl(this._dioClient, {FirebaseAuth? firebaseAuth})
+      : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
+
+  String _getEffectiveUserId(String userId) {
+    if (userId.trim().isNotEmpty) return userId.trim();
+    final uid = _firebaseAuth.currentUser?.uid;
+    if (uid != null && uid.isNotEmpty) return uid;
+    return userId;
+  }
 
   @override
   Future<List<TaskModel>> getTasks({
@@ -35,10 +45,11 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
     int skip = 0,
     int limit = 10,
   }) async {
+    final effectiveUid = _getEffectiveUserId(userId);
     final response = await _dioClient.get(
       '/tasks/',
       queryParameters: {
-        'user_id': userId,
+        'user_id': effectiveUid,
         'skip': skip,
         'limit': limit,
       },
@@ -66,10 +77,11 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
     required String userId,
     required TaskModel task,
   }) async {
+    final effectiveUid = _getEffectiveUserId(userId);
     final response = await _dioClient.post(
       '/tasks/',
       queryParameters: {
-        'user_id': userId,
+        'user_id': effectiveUid,
       },
       data: task.toCreateJson(),
     );
@@ -92,10 +104,11 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
     required String userId,
     required TaskModel task,
   }) async {
+    final effectiveUid = _getEffectiveUserId(userId);
     final response = await _dioClient.put(
       '/tasks/${task.id}',
       queryParameters: {
-        'user_id': userId,
+        'user_id': effectiveUid,
       },
       data: task.toCreateJson(),
     );
@@ -118,10 +131,11 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
     required String userId,
     required String taskId,
   }) async {
+    final effectiveUid = _getEffectiveUserId(userId);
     await _dioClient.delete(
       '/tasks/$taskId',
       queryParameters: {
-        'user_id': userId,
+        'user_id': effectiveUid,
       },
     );
   }
