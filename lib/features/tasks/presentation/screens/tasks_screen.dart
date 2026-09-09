@@ -26,7 +26,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(tasksNotifierProvider.notifier).loadInitialTasks(widget.user.id);
+      final state = ref.read(tasksNotifierProvider);
+      if (state.rawTasks.isEmpty && !state.isLoading) {
+        ref.read(tasksNotifierProvider.notifier).loadInitialTasks(widget.user.id);
+      }
     });
 
     _scrollController.addListener(_onScroll);
@@ -58,15 +61,27 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           required String priority,
           required String category,
           required DateTime dueDate,
-        }) {
-          ref.read(tasksNotifierProvider.notifier).addTask(
-                userId: widget.user.id,
-                title: title,
-                description: description,
-                priority: priority,
-                category: category,
-                dueDate: dueDate,
-              );
+        }) async {
+          final success =
+              await ref.read(tasksNotifierProvider.notifier).addTask(
+                    userId: widget.user.id,
+                    title: title,
+                    description: description,
+                    priority: priority,
+                    category: category,
+                    dueDate: dueDate,
+                  );
+
+          if (!success && mounted) {
+            final error = ref.read(tasksNotifierProvider).errorMessage;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(error ?? 'Failed to create task.'),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
+          }
+          return success;
         },
       ),
     );
@@ -293,7 +308,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                       required String priority,
                                       required String category,
                                       required DateTime dueDate,
-                                    }) {
+                                    }) async {
                                       final updated = task.copyWith(
                                         title: title,
                                         description: description,
@@ -301,7 +316,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                         category: category,
                                         dueDate: dueDate,
                                       );
-                                      tasksNotifier.updateTask(
+                                      return await tasksNotifier.updateTask(
                                         userId: widget.user.id,
                                         task: updated,
                                       );

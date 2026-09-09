@@ -26,8 +26,8 @@ class DashboardScreen extends ConsumerWidget {
           required String priority,
           required String category,
           required DateTime dueDate,
-        }) {
-          ref.read(tasksNotifierProvider.notifier).addTask(
+        }) async {
+          final success = await ref.read(tasksNotifierProvider.notifier).addTask(
                 userId: user.id,
                 title: title,
                 description: description,
@@ -35,11 +35,14 @@ class DashboardScreen extends ConsumerWidget {
                 category: category,
                 dueDate: dueDate,
               );
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => TasksScreen(user: user),
-            ),
-          );
+          if (success && context.mounted) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => TasksScreen(user: user),
+              ),
+            );
+          }
+          return success;
         },
       ),
     );

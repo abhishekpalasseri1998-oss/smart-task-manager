@@ -6,7 +6,7 @@ import '../../domain/entities/task_entity.dart';
 class TaskFormDialog extends StatefulWidget {
   final TaskEntity? initialTask;
   final String userId;
-  final Function({
+  final Future<bool> Function({
     required String title,
     String? description,
     required String priority,
@@ -32,6 +32,7 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
   late String _priority;
   late String _category;
   late DateTime _dueDate;
+  bool _isSubmitting = false;
 
   final List<String> _priorities = ['Low', 'Medium', 'High'];
   final List<String> _categories = [
@@ -56,7 +57,7 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
         widget.initialTask?.priority ?? 'Medium');
     _category = TaskModel.normalizeCategory(
         widget.initialTask?.category ?? 'Work');
-  if (!_categories.contains(_category)) {
+    if (!_categories.contains(_category)) {
       _category = 'Work';
     }
     _dueDate = widget.initialTask?.dueDate ?? DateTime.now();
@@ -70,6 +71,7 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    if (_isSubmitting) return;
     final picked = await showDatePicker(
       context: context,
       initialDate: _dueDate,
@@ -83,10 +85,15 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
     }
   }
 
-  void _submit() {
+  Future<void> _submit() async {
+    if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
 
-    widget.onSubmit(
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    final success = await widget.onSubmit(
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim().isEmpty
           ? null
@@ -96,7 +103,15 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
       dueDate: _dueDate,
     );
 
-    Navigator.of(context).pop();
+    if (mounted) {
+      if (success) {
+        Navigator.of(context).pop();
+      } else {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
   }
 
   @override
@@ -120,6 +135,7 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
               children: [
                 TextFormField(
                   controller: _titleController,
+                  enabled: !_isSubmitting,
                   autofocus: true,
                   textCapitalization: TextCapitalization.sentences,
                   validator: (value) {
@@ -129,7 +145,7 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
                     return null;
                   },
                   decoration: const InputDecoration(
-                    labelText: 'Task Title',
+                    labelText: 'Task Title *',
                     prefixIcon: Icon(Icons.task_alt),
                     border: OutlineInputBorder(),
                   ),
@@ -137,6 +153,7 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
                 const SizedBox(height: 14),
                 TextFormField(
                   controller: _descriptionController,
+                  enabled: !_isSubmitting,
                   maxLines: 3,
                   textCapitalization: TextCapitalization.sentences,
                   decoration: const InputDecoration(
@@ -161,11 +178,13 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
                                   child: Text(p),
                                 ))
                             .toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() => _priority = val);
-                          }
-                        },
+                        onChanged: _isSubmitting
+                            ? null
+                            : (val) {
+                                if (val != null) {
+                                  setState(() => _priority = val);
+                                }
+                              },
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -182,18 +201,20 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
                                   child: Text(c),
                                 ))
                             .toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() => _category = val);
-                          }
-                        },
+                        onChanged: _isSubmitting
+                            ? null
+                            : (val) {
+                                if (val != null) {
+                                  setState(() => _category = val);
+                                }
+                              },
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 14),
                 InkWell(
-                  onTap: () => _selectDate(context),
+                  onTap: _isSubmitting ? null : () => _selectDate(context),
                   borderRadius: BorderRadius.circular(8),
                   child: InputDecorator(
                     decoration: const InputDecoration(
@@ -214,12 +235,21 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: _submit,
-          child: Text(isEditing ? 'Save Changes' : 'Create Task'),
+          onPressed: _isSubmitting ? null : _submit,
+          child: _isSubmitting
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Text(isEditing ? 'Save Changes' : 'Create Task'),
         ),
       ],
     );
