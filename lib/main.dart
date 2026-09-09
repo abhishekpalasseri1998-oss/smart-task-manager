@@ -1,8 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'core/widgets/offline_banner.dart';
 import 'features/auth/presentation/screens/auth_gate.dart';
 import 'features/profile/presentation/providers/profile_providers.dart';
+import 'features/tasks/data/datasources/task_local_data_source.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -11,6 +14,9 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  await Hive.initFlutter();
+  await Hive.openBox(TaskLocalDataSourceImpl.boxName);
 
   runApp(
     const ProviderScope(
@@ -44,7 +50,9 @@ class MyApp extends ConsumerWidget {
         ),
       ),
       themeMode: themeMode,
-      home: const AuthGate(),
+      home: const OfflineBannerWrapper(
+        child: AuthGate(),
+      ),
     );
   }
 }

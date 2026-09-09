@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/network/network_info.dart';
 import '../../../auth/domain/entities/user_entity.dart';
 import '../providers/task_providers.dart';
 import '../providers/task_state.dart';
@@ -93,6 +94,13 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     final tasksNotifier = ref.read(tasksNotifierProvider.notifier);
     final displayedTasks = tasksState.filteredTasks;
     final theme = Theme.of(context);
+
+    // Auto-refresh when internet connectivity is restored
+    ref.listen<bool>(isOnlineProvider, (previous, isOnline) {
+      if (previous == false && isOnline == true) {
+        tasksNotifier.refreshTasks(widget.user.id);
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(

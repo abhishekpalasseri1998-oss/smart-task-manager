@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/network/network_info.dart';
+import '../../data/datasources/task_local_data_source.dart';
 import '../../data/datasources/task_remote_data_source.dart';
 import '../../data/repositories/task_repository_impl.dart';
 import '../../domain/entities/task_entity.dart';
@@ -18,8 +20,16 @@ final taskRemoteDataSourceProvider = Provider<TaskRemoteDataSource>((ref) {
   return TaskRemoteDataSourceImpl(ref.watch(dioClientProvider));
 });
 
+final taskLocalDataSourceProvider = Provider<TaskLocalDataSource>((ref) {
+  return TaskLocalDataSourceImpl();
+});
+
 final taskRepositoryProvider = Provider<TaskRepository>((ref) {
-  return TaskRepositoryImpl(ref.watch(taskRemoteDataSourceProvider));
+  return TaskRepositoryImpl(
+    ref.watch(taskRemoteDataSourceProvider),
+    ref.watch(taskLocalDataSourceProvider),
+    ref.watch(networkInfoProvider),
+  );
 });
 
 final getTasksUseCaseProvider = Provider<GetTasksUseCase>((ref) {
