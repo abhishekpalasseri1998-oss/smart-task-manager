@@ -93,23 +93,37 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
       _isSubmitting = true;
     });
 
-    final success = await widget.onSubmit(
-      title: _titleController.text.trim(),
-      description: _descriptionController.text.trim().isEmpty
-          ? null
-          : _descriptionController.text.trim(),
-      priority: _priority,
-      category: _category,
-      dueDate: _dueDate,
-    );
+    try {
+      final success = await widget.onSubmit(
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        priority: _priority,
+        category: _category,
+        dueDate: _dueDate,
+      );
 
-    if (mounted) {
-      if (success) {
-        Navigator.of(context).pop();
-      } else {
+      if (mounted) {
+        if (success) {
+          Navigator.of(context).pop();
+        } else {
+          setState(() {
+            _isSubmitting = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         setState(() {
           _isSubmitting = false;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
       }
     }
   }

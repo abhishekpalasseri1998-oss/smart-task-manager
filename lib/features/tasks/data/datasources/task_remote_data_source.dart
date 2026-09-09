@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/network/dio_client.dart';
 import '../models/task_model.dart';
@@ -55,7 +56,13 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       },
     );
 
-    final data = response.data;
+    dynamic data = response.data;
+    if (data is String) {
+      try {
+        data = jsonDecode(data);
+      } catch (_) {}
+    }
+
     List taskJsonList = [];
 
     if (data is Map<String, dynamic> && data.containsKey('data')) {
@@ -86,7 +93,13 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       data: task.toCreateJson(),
     );
 
-    final data = response.data;
+    dynamic data = response.data;
+    if (data is String) {
+      try {
+        data = jsonDecode(data);
+      } catch (_) {}
+    }
+
     if (data is Map<String, dynamic> && data.containsKey('data')) {
       final taskData = data['data'];
       if (taskData is Map<String, dynamic>) {
@@ -113,7 +126,13 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       data: task.toCreateJson(),
     );
 
-    final data = response.data;
+    dynamic data = response.data;
+    if (data is String) {
+      try {
+        data = jsonDecode(data);
+      } catch (_) {}
+    }
+
     if (data is Map<String, dynamic> && data.containsKey('data')) {
       final taskData = data['data'];
       if (taskData is Map<String, dynamic>) {

@@ -15,37 +15,50 @@ class DashboardScreen extends ConsumerWidget {
     required this.user,
   });
 
-  void _showAddTaskDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (_) => TaskFormDialog(
-        userId: user.id,
-        onSubmit: ({
-          required String title,
-          String? description,
-          required String priority,
-          required String category,
-          required DateTime dueDate,
-        }) async {
-          final success = await ref.read(tasksNotifierProvider.notifier).addTask(
-                userId: user.id,
-                title: title,
-                description: description,
-                priority: priority,
-                category: category,
-                dueDate: dueDate,
-              );
-          if (success && context.mounted) {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => TasksScreen(user: user),
-              ),
-            );
-          }
-          return success;
-        },
+  void _navigateToTasksAndOpenDialog(BuildContext context, WidgetRef ref) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TasksScreen(user: user),
       ),
     );
+
+    Future.microtask(() {
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (_) => TaskFormDialog(
+            userId: user.id,
+            onSubmit: ({
+              required String title,
+              String? description,
+              required String priority,
+              required String category,
+              required DateTime dueDate,
+            }) async {
+              final success = await ref.read(tasksNotifierProvider.notifier).addTask(
+                    userId: user.id,
+                    title: title,
+                    description: description,
+                    priority: priority,
+                    category: category,
+                    dueDate: dueDate,
+                  );
+
+              if (!success && context.mounted) {
+                final error = ref.read(tasksNotifierProvider).errorMessage;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(error ?? 'Failed to create task.'),
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                );
+              }
+              return success;
+            },
+          ),
+        );
+      }
+    });
   }
 
   @override
@@ -124,7 +137,7 @@ class DashboardScreen extends ConsumerWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => _showAddTaskDialog(context, ref),
+                    onPressed: () => _navigateToTasksAndOpenDialog(context, ref),
                     icon: const Icon(Icons.add_rounded),
                     label: const Text('+ Add Task'),
                     style: OutlinedButton.styleFrom(
