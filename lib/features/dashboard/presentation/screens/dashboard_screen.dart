@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import 'package:smart_task_manager/features/profile/presentation/screens/profile_screen.dart';
 
 class DashboardScreen extends ConsumerWidget {
   final UserEntity user;
@@ -20,6 +21,17 @@ class DashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
+          IconButton(
+            tooltip: 'Edit Profile',
+            icon: const Icon(Icons.person_outline),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ProfileScreen(user: user),
+                ),
+              );
+            },
+          ),
           IconButton(
             tooltip: 'Logout',
             icon: authState.isLoading
@@ -83,14 +95,24 @@ class DashboardScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'User ID: ${user.id}',
+                            'Theme: ${user.themeMode.toUpperCase()}',
                             style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.outline,
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w600,
                             ),
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => ProfileScreen(user: user),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -121,7 +143,7 @@ class DashboardScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 12),
                       const Text(
-                        'Authentication Successful!',
+                        'Firebase Auth & Firestore Connected',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -129,7 +151,7 @@ class DashboardScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Your profile details are loaded from Firestore users/${user.id}',
+                        'Profile document synced live at users/${user.id}',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
