@@ -79,7 +79,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   void _showThemeSelectionSheet(BuildContext context) {
-    final currentTheme = widget.user.themeMode;
+    final activeThemeMode = ref.read(themeModeNotifierProvider);
+    String currentThemeStr = 'system';
+    if (activeThemeMode == ThemeMode.light) currentThemeStr = 'light';
+    if (activeThemeMode == ThemeMode.dark) currentThemeStr = 'dark';
+
     final theme = Theme.of(context);
 
     showModalBottomSheet(
@@ -130,14 +134,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                   title: const Text('Light Theme'),
                   subtitle: const Text('Bright & clean default look'),
-                  trailing: currentTheme == 'light'
+                  trailing: currentThemeStr == 'light'
                       ? Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary)
                       : null,
                   onTap: () async {
                     Navigator.of(ctx).pop();
-                    await ref.read(profileControllerProvider.notifier).updateThemeMode(
-                          userId: widget.user.id,
-                          themeMode: 'light',
+                    await ref.read(themeModeNotifierProvider.notifier).setThemeMode(
+                          widget.user.id,
+                          'light',
                         );
                   },
                 ),
@@ -152,14 +156,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                   title: const Text('Dark Theme'),
                   subtitle: const Text('Sleek & high contrast for low light'),
-                  trailing: currentTheme == 'dark'
+                  trailing: currentThemeStr == 'dark'
                       ? Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary)
                       : null,
                   onTap: () async {
                     Navigator.of(ctx).pop();
-                    await ref.read(profileControllerProvider.notifier).updateThemeMode(
-                          userId: widget.user.id,
-                          themeMode: 'dark',
+                    await ref.read(themeModeNotifierProvider.notifier).setThemeMode(
+                          widget.user.id,
+                          'dark',
                         );
                   },
                 ),
@@ -174,14 +178,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                   title: const Text('System Default'),
                   subtitle: const Text('Match system device appearance'),
-                  trailing: currentTheme == 'system'
+                  trailing: currentThemeStr == 'system'
                       ? Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary)
                       : null,
                   onTap: () async {
                     Navigator.of(ctx).pop();
-                    await ref.read(profileControllerProvider.notifier).updateThemeMode(
-                          userId: widget.user.id,
-                          themeMode: 'system',
+                    await ref.read(themeModeNotifierProvider.notifier).setThemeMode(
+                          widget.user.id,
+                          'system',
                         );
                   },
                 ),
@@ -237,6 +241,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final theme = Theme.of(context);
     final authState = ref.watch(authControllerProvider);
     final tasksState = ref.watch(tasksNotifierProvider);
+    final activeThemeMode = ref.watch(themeModeNotifierProvider);
+
+    String themeLabel = 'SYSTEM';
+    if (activeThemeMode == ThemeMode.light) themeLabel = 'LIGHT';
+    if (activeThemeMode == ThemeMode.dark) themeLabel = 'DARK';
 
     final rawTasks = tasksState.rawTasks;
     final totalTasks = rawTasks.length;
@@ -470,9 +479,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     leading: CircleAvatar(
                       backgroundColor: theme.colorScheme.secondaryContainer,
                       child: Icon(
-                        widget.user.themeMode == 'dark'
+                        activeThemeMode == ThemeMode.dark
                             ? Icons.dark_mode_outlined
-                            : (widget.user.themeMode == 'light'
+                            : (activeThemeMode == ThemeMode.light
                                 ? Icons.light_mode_outlined
                                 : Icons.settings_suggest_outlined),
                         color: theme.colorScheme.onSecondaryContainer,
@@ -482,7 +491,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       'Settings & Theme',
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    subtitle: Text('Mode: ${widget.user.themeMode.toUpperCase()}'),
+                    subtitle: Text('Mode: $themeLabel'),
                     trailing: const Icon(Icons.tune_rounded),
                     onTap: () => _showThemeSelectionSheet(context),
                   ),

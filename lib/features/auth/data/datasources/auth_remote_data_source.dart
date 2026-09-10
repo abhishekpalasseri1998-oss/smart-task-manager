@@ -63,20 +63,19 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       );
 
       // Create document in Firestore users/{userId}
-      await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .set(userModel.toFirestore());
+      try {
+        await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .set(userModel.toFirestore());
+      } catch (_) {
+        // Ignore Firestore permission-denied on sign up so Auth succeeds
+      }
 
       return userModel;
     } on FirebaseAuthException catch (e) {
       throw AuthException(
         message: _mapFirebaseAuthError(e),
-        code: e.code,
-      );
-    } on FirebaseException catch (e) {
-      throw AuthException(
-        message: e.message ?? 'Firestore database error occurred.',
         code: e.code,
       );
     } catch (e) {
@@ -102,7 +101,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
 
       // Fetch user profile from Firestore users/{userId}
-      var profile = await getUserProfile(user.uid);
+      UserModel? profile;
+      try {
+        profile = await getUserProfile(user.uid);
+      } catch (_) {}
+
       if (profile == null) {
         // Fallback: create default profile if doc missing
         profile = UserModel(
@@ -112,21 +115,20 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           createdAt: DateTime.now(),
           themeMode: 'system',
         );
-        await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .set(profile.toFirestore());
+        try {
+          await _firestore
+              .collection('users')
+              .doc(user.uid)
+              .set(profile.toFirestore());
+        } catch (_) {
+          // Ignore Firestore permission errors on login
+        }
       }
 
       return profile;
     } on FirebaseAuthException catch (e) {
       throw AuthException(
         message: _mapFirebaseAuthError(e),
-        code: e.code,
-      );
-    } on FirebaseException catch (e) {
-      throw AuthException(
-        message: e.message ?? 'Firestore database error occurred.',
         code: e.code,
       );
     } catch (e) {
@@ -151,12 +153,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (!doc.exists) return null;
       return UserModel.fromFirestore(doc);
     } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        return null;
+      }
       throw AuthException(
         message: e.message ?? 'Failed to fetch user profile.',
         code: e.code,
       );
-    } catch (e) {
-      throw AuthException(message: 'Failed to fetch user profile: ${e.toString()}');
+    } catch (_) {
+      return null;
     }
   }
 

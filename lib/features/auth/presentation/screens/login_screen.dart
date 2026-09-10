@@ -29,6 +29,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     FocusScope.of(context).unfocus();
+    ScaffoldMessenger.of(context).clearSnackBars();
 
     await ref.read(authControllerProvider.notifier).signIn(
           email: _emailController.text.trim(),

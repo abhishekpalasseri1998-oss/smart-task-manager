@@ -33,6 +33,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     FocusScope.of(context).unfocus();
+    ScaffoldMessenger.of(context).clearSnackBars();
 
     final success = await ref.read(authControllerProvider.notifier).signUp(
           name: _nameController.text.trim(),

@@ -198,10 +198,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             _selectedThemeMode = selectedMode;
                           });
                           await ref
-                              .read(profileControllerProvider.notifier)
-                              .updateThemeMode(
-                                userId: widget.user.id,
-                                themeMode: selectedMode,
+                              .read(themeModeNotifierProvider.notifier)
+                              .setThemeMode(
+                                widget.user.id,
+                                selectedMode,
                               );
                         },
                       ),
